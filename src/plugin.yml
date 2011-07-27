@@ -1,0 +1,10 @@
+author: Agnate
+database: false
+description: Recruit Medusa to gaze upon your users and turn their illegal weapons
+  and tools to stone! (Fixes a bug from MobArena where some users were able to take
+  unbreakable tools out of the arena.)
+generator: http://dinnerbone.com/minecraft/tools/pluginator/
+main: ca.agnate.medusagaze.MedusaGaze
+name: MedusaGaze
+startup: postworld
+version: 0.1.0
