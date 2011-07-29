@@ -1,6 +1,7 @@
 package ca.agnate.medusagaze;
 
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event.Priority;
 import org.bukkit.event.Event;
@@ -13,6 +14,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 import ca.agnate.medusagaze.MedusaPlayerListener;
 import java.util.List;
 import java.util.LinkedList;
+import com.nijiko.permissions.PermissionHandler;
+import com.nijikokun.bukkit.Permissions.Permissions;
+import org.bukkit.plugin.Plugin;
 
 public class MedusaGaze extends JavaPlugin {
 
@@ -23,92 +27,150 @@ public class MedusaGaze extends JavaPlugin {
     public static final List<Material> PICKAXES_TYPE = new LinkedList<Material>();
     public static final List<Material> SPADES_TYPE = new LinkedList<Material>();
     public static final List<Material> HOES_TYPE = new LinkedList<Material>();
-
+    
+    private static PermissionHandler permissionHandler;
+    
+    private static List<String> permissionNodes_OP;
+    private static List<String> permissionNodes_All;
+    
+    public static final String COMMAND_WORLDGAZE = "medusagaze.worldgaze";
+    
     static {
-	// Weapons
-	SWORDS_TYPE.add(Material.WOOD_SWORD);
-	SWORDS_TYPE.add(Material.STONE_SWORD);
-	SWORDS_TYPE.add(Material.GOLD_SWORD);
-	SWORDS_TYPE.add(Material.IRON_SWORD);
-	SWORDS_TYPE.add(Material.DIAMOND_SWORD);
+        // Set up Permission nodes.  OP-only nodes are added to:  permissionNodes_OP
+        // Everyone-nodes are added to:  permissionNodes_All
+        permissionNodes_OP.add( COMMAND_WORLDGAZE );
+        
+        // Weapons
+        SWORDS_TYPE.add(Material.WOOD_SWORD);
+        SWORDS_TYPE.add(Material.STONE_SWORD);
+        SWORDS_TYPE.add(Material.GOLD_SWORD);
+        SWORDS_TYPE.add(Material.IRON_SWORD);
+        SWORDS_TYPE.add(Material.DIAMOND_SWORD);
 
-	AXES_TYPE.add(Material.WOOD_AXE);
-	AXES_TYPE.add(Material.STONE_AXE);
-	AXES_TYPE.add(Material.GOLD_AXE);
-	AXES_TYPE.add(Material.IRON_AXE);
-	AXES_TYPE.add(Material.DIAMOND_AXE);
+        AXES_TYPE.add(Material.WOOD_AXE);
+        AXES_TYPE.add(Material.STONE_AXE);
+        AXES_TYPE.add(Material.GOLD_AXE);
+        AXES_TYPE.add(Material.IRON_AXE);
+        AXES_TYPE.add(Material.DIAMOND_AXE);
 
-	PICKAXES_TYPE.add(Material.WOOD_PICKAXE);
-	PICKAXES_TYPE.add(Material.STONE_PICKAXE);
-	PICKAXES_TYPE.add(Material.GOLD_PICKAXE);
-	PICKAXES_TYPE.add(Material.IRON_PICKAXE);
-	PICKAXES_TYPE.add(Material.DIAMOND_PICKAXE);
+        PICKAXES_TYPE.add(Material.WOOD_PICKAXE);
+        PICKAXES_TYPE.add(Material.STONE_PICKAXE);
+        PICKAXES_TYPE.add(Material.GOLD_PICKAXE);
+        PICKAXES_TYPE.add(Material.IRON_PICKAXE);
+        PICKAXES_TYPE.add(Material.DIAMOND_PICKAXE);
 
-	SPADES_TYPE.add(Material.WOOD_SPADE);
-	SPADES_TYPE.add(Material.STONE_SPADE);
-	SPADES_TYPE.add(Material.GOLD_SPADE);
-	SPADES_TYPE.add(Material.IRON_SPADE);
-	SPADES_TYPE.add(Material.DIAMOND_SPADE);
+        SPADES_TYPE.add(Material.WOOD_SPADE);
+        SPADES_TYPE.add(Material.STONE_SPADE);
+        SPADES_TYPE.add(Material.GOLD_SPADE);
+        SPADES_TYPE.add(Material.IRON_SPADE);
+        SPADES_TYPE.add(Material.DIAMOND_SPADE);
 
-	HOES_TYPE.add(Material.WOOD_HOE);
-	HOES_TYPE.add(Material.STONE_HOE);
-	HOES_TYPE.add(Material.GOLD_HOE);
-	HOES_TYPE.add(Material.IRON_HOE);
-	HOES_TYPE.add(Material.DIAMOND_HOE);
+        HOES_TYPE.add(Material.WOOD_HOE);
+        HOES_TYPE.add(Material.STONE_HOE);
+        HOES_TYPE.add(Material.GOLD_HOE);
+        HOES_TYPE.add(Material.IRON_HOE);
+        HOES_TYPE.add(Material.DIAMOND_HOE);
 
-	WEAPONS_TYPE.addAll(SWORDS_TYPE);
-	WEAPONS_TYPE.addAll(AXES_TYPE);
-	WEAPONS_TYPE.addAll(PICKAXES_TYPE);
-	WEAPONS_TYPE.addAll(SPADES_TYPE);
-	WEAPONS_TYPE.addAll(HOES_TYPE);
+        WEAPONS_TYPE.addAll(SWORDS_TYPE);
+        WEAPONS_TYPE.addAll(AXES_TYPE);
+        WEAPONS_TYPE.addAll(PICKAXES_TYPE);
+        WEAPONS_TYPE.addAll(SPADES_TYPE);
+        WEAPONS_TYPE.addAll(HOES_TYPE);
     }
 
     public void onDisable() {
-	System.out.println("Medusa has left your server... for now.  [" + this
-		+ " is disabled.]");
+        System.out.println("[" + this + "] Medusa has left your server... for now.  (disabled)");
     }
 
     public void onEnable() {
-	System.out
-		.println("Medusa has reared her beautiful, wretched face! Hide your illegal tools!  ["
-			+ this + " is enabled.]");
+        // Set up commands for users.
+        setupCommands();
+        setupPermissions();
 
-	PluginManager pm = getServer().getPluginManager();
-	final PlayerListener playerListener = new MedusaPlayerListener(this);
+        PluginManager pm = getServer().getPluginManager();
+        final PlayerListener playerListener = new MedusaPlayerListener(this);
 
-	pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener,
-		Priority.Lowest, this);
-	pm.registerEvent(Event.Type.INVENTORY_OPEN, playerListener,
-		Priority.Lowest, this);
+        pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener, Priority.Lowest, this);
+        pm.registerEvent(Event.Type.INVENTORY_OPEN, playerListener, Priority.Lowest, this);
+        pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, playerListener, Priority.Monitor, this);
+
+        System.out.println("[" + this + "] Medusa has reared her beautiful, wretched face! Hide your illegal tools!  (enabled)");
+    }
+
+    private void setupCommands() {
+        MedusaGazeCommands commandExecutor = new MedusaGazeCommands(this);
+        getCommand("medusa").setExecutor(commandExecutor);
+    }
+    
+    private void setupPermissions() {
+        if (permissionHandler != null)
+            return;
+    
+        Plugin permissionsPlugin = this.getServer().getPluginManager().getPlugin("Permissions");
+        if (permissionsPlugin == null) {
+            System.out.println("[" + this + "] Permissions not detected, using OPs.");
+            return;
+        }
+        
+        permissionHandler = ((Permissions) permissionsPlugin).getHandler();
+        System.out.println("[" + this + "] Permissions detected ("+((Permissions)permissionsPlugin).getDescription().getFullName()+")");
+    }
+    
+    public static boolean has (Player p, String node) {
+        // If there's no Permissions file,
+        if ( permissionHandler == null ) {
+            // If the node requires OP status, check for OP.
+            if ( permissionNodes_OP.contains(node) ) {
+                return( p.isOp() );
+            }
+            else if ( permissionNodes_All.contains(node) ) {
+                // Otherwise it must be a global node.
+                return true;
+            }
+        }
+        // Permissions exists, so check for node.
+        else {
+            return( permissionHandler.has(p, node) );
+        }
+        
+        // If nothing validated the node, it means it is disabled.
+        return false;
     }
 
     public boolean isProperMaterial(Material mat) {
-	if (WEAPONS_TYPE.contains(mat))
-	    return true;
+        if (WEAPONS_TYPE.contains(mat))
+            return true;
 
-	if (SWORDS_TYPE.contains(mat))
-	    return true;
+        if (SWORDS_TYPE.contains(mat))
+            return true;
 
-	if (AXES_TYPE.contains(mat))
-	    return true;
+        if (AXES_TYPE.contains(mat))
+            return true;
 
-	if (PICKAXES_TYPE.contains(mat))
-	    return true;
+        if (PICKAXES_TYPE.contains(mat))
+            return true;
 
-	if (HOES_TYPE.contains(mat))
-	    return true;
+        if (HOES_TYPE.contains(mat))
+            return true;
 
-	return false;
+        return false;
     }
 
     public void gazeUponInventory(Inventory inv) {
-	for (ItemStack item : inv.getContents()) {
-	    if (isProperMaterial(item.getType()) && item.getDurability() < 0) {
-		// Found a hacked weapon/tool, so convert it to stone.
-		item.setDurability((short) 0);
-		item.setType(Material.STONE);
-		item.setAmount(1);
-	    }
-	}
+        for (ItemStack item : inv.getContents()) {
+            if (isProperMaterial(item.getType()) && item.getDurability() < 0) {
+                // Found a hacked weapon/tool, so convert it to stone.
+                item.setDurability((short) 0);
+                item.setType(Material.STONE);
+                item.setAmount(1);
+            }
+        }
+    }
+
+    public void releaseMedusaOntoTheWorld() {
+        // Get the list of worlds.
+        // List<World> worlds = getServer().getWorlds();
+
+        // worlds.
     }
 }
