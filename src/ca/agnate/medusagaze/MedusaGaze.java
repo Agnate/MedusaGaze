@@ -30,15 +30,14 @@ public class MedusaGaze extends JavaPlugin {
     
     private static PermissionHandler permissionHandler;
     
-    private static List<String> permissionNodes_OP;
-    private static List<String> permissionNodes_All;
+    private static List<String> permissionOPs;
     
     public static final String COMMAND_WORLDGAZE = "medusagaze.worldgaze";
     
     static {
         // Set up Permission nodes.  OP-only nodes are added to:  permissionNodes_OP
         // Everyone-nodes are added to:  permissionNodes_All
-        permissionNodes_OP.add( COMMAND_WORLDGAZE );
+        permissionOPs.add( COMMAND_WORLDGAZE );
         
         // Weapons
         SWORDS_TYPE.add(Material.WOOD_SWORD);
@@ -116,25 +115,35 @@ public class MedusaGaze extends JavaPlugin {
         System.out.println("[" + this + "] Permissions detected ("+((Permissions)permissionsPlugin).getDescription().getFullName()+")");
     }
     
-    public static boolean has (Player p, String node) {
-        // If there's no Permissions file,
-        if ( permissionHandler == null ) {
-            // If the node requires OP status, check for OP.
-            if ( permissionNodes_OP.contains(node) ) {
-                return( p.isOp() );
-            }
-            else if ( permissionNodes_All.contains(node) ) {
-                // Otherwise it must be a global node.
+    public boolean has(Player p, String s)
+    {
+        //return (permissionHandler == null || permissionHandler.has(p, s));
+        return hasSuperPerms(p, s) || hasNijikoPerms(p, s) || hasOPPerm(p, s);
+    }
+    
+    public boolean hasOPPerm (Player p, String node) {
+        // If the node requires OP status, and the player has OP, then true.
+        return( permissionOPs.contains(node) && p.isOp() );
+    }
+    
+    public boolean hasSuperPerms(Player p, String s)
+    {
+        String[] nodes = s.split("\\.");
+        
+        String perm = "";
+        for (int i = 0; i < nodes.length; i++)
+        {
+            perm += nodes[i] + ".";
+            if (p.hasPermission(perm + "*"))
                 return true;
-            }
-        }
-        // Permissions exists, so check for node.
-        else {
-            return( permissionHandler.has(p, node) );
         }
         
-        // If nothing validated the node, it means it is disabled.
-        return false;
+        return p.hasPermission(s);
+    }
+
+    public boolean hasNijikoPerms(Player p, String s)
+    {
+        return permissionHandler != null && permissionHandler.has(p, s);
     }
 
     public boolean isProperMaterial(Material mat) {

@@ -28,7 +28,7 @@ public class MedusaGazeCommands implements CommandExecutor {
 
         String warningMsg = "WARNING! Allowing Medusa to cast her gaze on your server will CAUSE AN INTENSE AMOUNT OF LAG! To continue, type: /medusagaze turnHerGazeOntoTheWorld YES";
         
-        if (base.equals("medusa")  &&  MedusaGaze.has(p, MedusaGaze.COMMAND_WORLDGAZE) ) {
+        if (base.equals("medusa")  &&  plugin.has(p, MedusaGaze.COMMAND_WORLDGAZE) ) {
             if (argsList.get(0).equalsIgnoreCase("turnHerGazeOntoTheWorld")) {
                 if (argsList.size() < 2) {
                     if (player) {
