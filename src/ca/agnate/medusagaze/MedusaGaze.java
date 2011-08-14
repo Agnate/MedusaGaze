@@ -123,7 +123,7 @@ public class MedusaGaze extends JavaPlugin {
     
     public boolean hasOPPerm (Player p, String node) {
         // If the node requires OP status, and the player has OP, then true.
-        return( permissionOPs.contains(node) && p.isOp() );
+        return( permissionOPs.contains(node) == false || p.isOp() );
     }
     
     public boolean hasSuperPerms(Player p, String s)
